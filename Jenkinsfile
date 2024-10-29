@@ -8,6 +8,7 @@ pipeline{
     }
     environment{
         dockerhub_cred = credentials('docker_cred')
+
     }
     stages{
         stage('Clean Workspace'){
@@ -17,7 +18,7 @@ pipeline{
         }
         stage('Checkout stage'){
             steps{
-                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/minotaur423/addressbook.git']])
+                checkout scmGit(branches: [[name: 'DEV/*']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-creds', url: 'https://github.com/minotaur423/addressbook.git']])
             }
         }
         stage('Maven Build'){
