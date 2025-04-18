@@ -1,0 +1,68 @@
+pipeline{
+    agent any
+    tools{
+        maven 'maven'
+    }
+    options {
+        buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '30', numToKeepStr: '10')
+    }
+    environment{
+        dockerhub_cred = credentials('docker_cred')
+        project = 'addressbook'
+        tag = 'default'
+        commitNum = 'default'
+    }
+    stages{
+        stage('Clean Workspace'){
+            steps{
+                sh "docker system prune --volumes -af"
+            }
+        }
+        stage('Checkout stage'){
+            steps{
+                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: 'github_cred', url: 'https://github.com/minotaur423/addressbook.git']])
+                script {
+                  commitNum = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                  if(env.BRANCH_NAME.contains('/')) {
+                    tag = sh(script: "echo ${BRANCH_NAME} |awk -F '/' '{print \$2}'", returnStdout: true).trim()
+                  } else {
+                    tag = env.BRANCH_NAME
+                  }
+               }
+            }
+        }
+        stage('Maven Build'){
+            steps{
+                sh "mvn package"
+            }
+        }
+        stage('docker build'){
+            steps{
+                sh "docker build --pull --no-cache -t ${project}:${tag}.${commitNum} ."
+            }
+        }
+        stage('Artifactory push'){
+            steps{
+                sh 'echo $dockerhub_cred_PSW | docker login -u $dockerhub_cred_USR --password-stdin'
+                sh "docker push ${project}:${tag}.${commitNum}"
+            }
+        }
+/*        stage('Docker run'){
+            steps{
+                sh "docker run -d -p 80:8080 --name addressbook ${ARTIFACTORY_DOCKER_SERVER}/docker/project-docker:${BUILD_NUMBER}"
+            }
+        }*/
+    }
+    post {
+        always {
+            echo "job is completed"
+            sh "docker logout"
+        }
+        success {
+            echo "It is a success"
+        }
+        failure {
+            echo "It has failed"
+         }
+    }
+}
