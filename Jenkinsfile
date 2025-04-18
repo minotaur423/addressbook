@@ -8,6 +8,9 @@ pipeline{
     }
     environment{
         dockerhub_cred = credentials('docker_cred')
+        project = 'addressbook'
+        tag = 'default'
+        commitNum = 'default'
     }
     stages{
         stage('Clean Workspace'){
@@ -18,6 +21,14 @@ pipeline{
         stage('Checkout stage'){
             steps{
                 checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: 'github_cred', url: 'https://github.com/minotaur423/addressbook.git']])
+                script {
+                  commitNum = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                  if(env.BRANCH_NAME.contains('/')) {
+                    tag = sh(script: "echo ${BRANCH_NAME} |awk -F '/' '{print \$2}'", returnStdout: true).trim()
+                  } else {
+                    tag = env.BRANCH_NAME
+                  }
+               }
             }
         }
         stage('Maven Build'){
@@ -27,13 +38,13 @@ pipeline{
         }
         stage('docker build'){
             steps{
-                sh "docker build -t ${ARTIFACTORY_DOCKER_SERVER}/docker/project-docker:${BUILD_NUMBER} ."
+                sh "docker build --pull --no-cache -t ${ARTIFACTORY_DOCKER_SERVER}/${project}:${tag}.${commitNum} ."
             }
         }
         stage('Artifactory push'){
             steps{
                 sh 'echo $dockerhub_cred_PSW | docker login -u $dockerhub_cred_USR ${ARTIFACTORY_DOCKER_SERVER} --password-stdin'
-                sh "docker push ${ARTIFACTORY_DOCKER_SERVER}/docker/project-docker:${BUILD_NUMBER}"
+                sh "docker push ${ARTIFACTORY_DOCKER_SERVER}/${project}:${tag}.${commitNum}"
             }
         }
 /*        stage('Docker run'){
