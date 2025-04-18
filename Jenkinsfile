@@ -12,17 +12,17 @@ pipeline{
     stages{
         stage('Clean Workspace'){
             steps{
-                sh 'docker system prune -af'
+                sh "docker system prune --volumes -af"
             }
         }
         stage('Checkout stage'){
             steps{
-                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/minotaur423/addressbook.git']])
+                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: 'github_cred', url: 'https://github.com/minotaur423/addressbook.git']])
             }
         }
         stage('Maven Build'){
             steps{
-                sh 'mvn package'
+                sh "mvn package"
             }
         }
         stage('docker build'){
