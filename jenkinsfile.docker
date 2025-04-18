@@ -47,11 +47,11 @@ pipeline{
                 sh "docker push $dockerhub_cred_USR/${project}:${tag}.${commitNum}"
             }
         }
-/*        stage('Docker run'){
+        stage('Docker run'){
             steps{
-                sh "docker run -d -p 80:8080 --name addressbook ${ARTIFACTORY_DOCKER_SERVER}/docker/project-docker:${BUILD_NUMBER}"
+                sh "docker run -d -p 80:8080 --name addressbook $dockerhub_cred_USR/${project}:${tag}.${commitNum}"
             }
-        }*/
+        }
     }
     post {
         always {
