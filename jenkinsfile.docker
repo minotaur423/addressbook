@@ -38,13 +38,13 @@ pipeline{
         }
         stage('docker build'){
             steps{
-                sh "docker build --pull --no-cache -t ${project}:${tag}.${commitNum} ."
+                sh "docker build --pull --no-cache -t $dockerhub_cred_USR/${project}:${tag}.${commitNum} ."
             }
         }
         stage('Artifactory push'){
             steps{
                 sh 'echo $dockerhub_cred_PSW | docker login -u $dockerhub_cred_USR --password-stdin'
-                sh "docker push ${project}:${tag}.${commitNum}"
+                sh "docker push $dockerhub_cred_USR/${project}:${tag}.${commitNum}"
             }
         }
 /*        stage('Docker run'){
